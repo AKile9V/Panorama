@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-
+import random
 import numpy as np
 import copy
 import sys
@@ -136,11 +136,36 @@ def dlt_algorithm_m(old_points, new_points):
 
 # ----------------------------------------------- RANSAC --------------------------------------------------
 
-def RANSAC():
-    print();
+def distnace(p1, p2):
+    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
 
 
+def RANSAC(old_points, new_points):
+    best_model = None
+    max_inlier = 0
+    max_iter = 10000
+    for i in range(max_iter):
+        s = random.sample(range(len(old_points)), 4)
+        n = [new_points[i] for i in s]
+        o = [old_points[i] for i in s]
+        matrix = dlt_algorithm(o,n)
+        current_inliers = 0
+        for j in range(len(old_points)):
+            npoint = np.dot(matrix, old_points[j])
+            npoint[0] /= npoint[2]
+            npoint[1] /= npoint[2]
+            npoint[2] /= npoint[2]
+            dist = distnace(npoint, new_points[j])
+            if dist < 5:
+                current_inliers += 1
+
+        if current_inliers > max_inlier:
+            max_inlier = current_inliers
+            best_model = copy.deepcopy(matrix)
+
+    print(max_inlier)
+    return best_model
 
 
 def Usage():
@@ -398,10 +423,11 @@ def create_panorama(old_points,new_points,image1,image2,scale_ratio):
     max_x = max_x[0]
     
     
-    print(new_points)
+
     new_points = translate(new_points,image1_width)
+    print(old_points)
     print(new_points)
-    M  = dlt_algorithm(old_points,new_points)
+    M  = RANSAC(old_points,new_points)
     print(M)
 
 
