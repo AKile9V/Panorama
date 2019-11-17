@@ -146,7 +146,7 @@ def RANSAC(old_points, new_points):
     print("RANSAC algorithm starting\n Please wait, it could take some time...")
     best_model = None
     max_inlier = 0
-    max_iter = 10000
+    max_iter = 100000
     if len(old_points) > len(new_points):
         old_points = old_points[:len(new_points)]
     elif len(old_points) < len(new_points):
@@ -164,7 +164,7 @@ def RANSAC(old_points, new_points):
             npoint[1] /= npoint[2]
             npoint[2] /= npoint[2]
             dist = distnace(npoint, new_points[j])
-            if dist < 5:
+            if dist < 6:
                 current_inliers += 1
 
         if current_inliers > max_inlier:
@@ -228,11 +228,11 @@ def gui():
     file_types = ["*.jpeg", "*.jpg", "*.bmp", "*.png", "*.JPG", "*.JPEG", "*.BMP", "*.PNG"]
 
     width_wc = 1280
-    height_wc = 670
+    height_wc = 720
     canvas_height = 720
     canvas_width = 640
     
-    geom_string = "{}x{}+{}+{}".format(width_wc+50,height_wc , 0, 0)
+    geom_string = "{}x{}+{}+{}".format(width_wc,height_wc+70 , 0, 0)
     window.geometry(geom_string)
     
     
@@ -317,7 +317,7 @@ def gui():
         
         old_points[current_pictures[0]].append([x0, y0, 1.0])
         rec_id[0].append(canvas1.create_rectangle(x0 - 3, y0 - 3, x0 + 3, y0 + 3, outline="red", width=2))
-        no_point[0].append(canvas1.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[0]))))        
+        no_point[0].append(canvas1.create_text(x0 + 5,y0 -5,fill="white",font="Times 15 bold",text = "{}".format(len(rec_id[0]))))
 
     def click_images(eventorigin):
         # Take (x,y) coords
@@ -326,7 +326,7 @@ def gui():
         
         new_points[current_pictures[0]].append([x0, y0, 1.0])
         rec_id[1].append(canvas2.create_rectangle(x0 - 3, y0 - 3, x0 + 3, y0 + 3, outline="blue", width=2))
-        no_point[1].append(canvas2.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[1]))))
+        no_point[1].append(canvas2.create_text(x0 + 5,y0 -5,fill="white",font="Times 15 bold",text = "{}".format(len(rec_id[1]))))
 
 
     canvas1.bind("<Button 1>",click_original)
@@ -438,7 +438,9 @@ def gui():
         
         #Showing
         new_image = ImageTk.PhotoImage(im)
-        canvas_show = tk.Canvas(window, width=width_wc, height=height_wc, bg='black',bd = 0,highlightbackground = "white")
+        nwidth = new_image.width()
+        nheight = new_image.height()
+        canvas_show = tk.Canvas(window, width=nwidth, height=nheight, bg='black',bd = 0,highlightbackground = "white")
         canvas_show.create_image(0, 0, image=new_image, anchor=tk.NW)
         canvas_show.pack(side = tk.LEFT)
         tk.mainloop()
