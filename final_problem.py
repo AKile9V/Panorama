@@ -229,7 +229,7 @@ def gui():
     loaded_pictures = []
     image_files = []
     
-    usagel = tk.Label(window, text = "Usage:\n Input number of pictures you want to load. Select them in order you want them to be merged (from left to right)\nUse you left/right arrow to switch between pictures. You can select how many points you like but keep note that there need to be equal number of points on both pictures you currenty looking.\nIf you want to use RANSAC, press 'R'\nWhen you done, just pres ENTER. GLHF",bg = 'white',anchor = tk.NW)
+    usagel = tk.Label(window, text = "Usage:\n Input number of pictures you want to load. Select them in order you want them to be merged (from left to right)\nUse you left/right arrow to switch between pictures. You can select how many points you like but keep note that there need to be equal number of points on both pictures you currenty looking.\n To run panorama with more then 4 points and RANSAC press 'r'\n To run algorithm on 4, press ENTER. GLHF",bg = 'white',anchor = tk.NW)
     usagel.pack(side = tk.TOP)
 
     
@@ -435,7 +435,7 @@ def create_panorama(old_points,new_points,image1,image2,scale_ratio,using_ransac
     new_points = translate(new_points,image1_width)
     
 
-    if using_ransac[0]:
+    if using_ransac:
         M  = RANSAC(old_points,new_points)
     else:
         M = dlt_algorithm(old_points[:4],new_points[:4])
