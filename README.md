@@ -1,7 +1,3 @@
 # Panorama
 
-DE SI 
-MATORI
-STA IMA
-E
-e TEBRA KAKO IDE
+2 slike
