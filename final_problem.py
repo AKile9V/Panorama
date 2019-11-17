@@ -134,12 +134,13 @@ def dlt_algorithm_m(old_points, new_points):
     return matrix_p
 
 
-# ----------------------------------------------- RANSAC --------------------------------------------------
 
+# Distance between points
 def distnace(p1, p2):
     return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
 
+# ----------------------------------------------- RANSAC --------------------------------------------------
 
 def RANSAC(old_points, new_points):
     best_model = None
@@ -172,7 +173,7 @@ def Usage():
     print("Usage: \nInput number of pictures you want to load.\nSelect them in order you want them to be merged (from left to right)")
     print("Use you left/right arrow to switch between pictures")
     print("You can select how many points you like but keep note that there need to be equal number of points on both pictures you currenty looking")
-    print("If you want to use RANSAC for selecting just press 'R'")
+    print("If you want to use RANSAC, press 'R'")
     print("Final picture will be shown on screen right away")
     print("Enjoy!")
         
@@ -204,11 +205,10 @@ def initializing():
 def gui():
 
     num_of_pictures = initializing()
-
-    Usage()
+    
     # Delete this after fixing =4 problem
     num_of_points = 4
-    
+
     # Making window
     window = tk.Tk()
     window.title("Panorama")
@@ -218,16 +218,20 @@ def gui():
     file_types = ["*.jpeg", "*.jpg", "*.bmp", "*.png", "*.JPG", "*.JPEG", "*.BMP", "*.PNG"]
 
     width_wc = 1280
-    height_wc = 720
+    height_wc = 670
     canvas_height = 720
     canvas_width = 640
     
-    geom_string = "{}x{}+{}+{}".format(width_wc,height_wc , 0, 0)
+    geom_string = "{}x{}+{}+{}".format(width_wc+50,height_wc , 0, 0)
     window.geometry(geom_string)
     
     
     loaded_pictures = []
     image_files = []
+    
+    usagel = tk.Label(window, text = "Usage:\n Input number of pictures you want to load. Select them in order you want them to be merged (from left to right)\nUse you left/right arrow to switch between pictures. You can select how many points you like but keep note that there need to be equal number of points on both pictures you currenty looking.\nIf you want to use RANSAC, press 'R'\nWhen you done, just pres ENTER. GLHF",bg = 'white',anchor = tk.NW)
+    usagel.pack(side = tk.TOP)
+
     
     for i in range(num_of_pictures):
                     
@@ -287,12 +291,7 @@ def gui():
     text_id = canvas1.create_text(100, 10, fill="red", font="Times 15 bold", text="X: {} Y: {}".format(0, 0))
     canvas1.bind("<Motion>", motion)
     canvas2.bind("<Motion>",motion)
-    
 
-        
-
-        
-    
     
     
     #MOY GOD
@@ -380,8 +379,19 @@ def gui():
         window.bind("<Right>",move_right)
         window.bind("<Left>",move_left)    
     
+    def use_ransac(event):
+        create_panorama(old_points[0],new_points[0],image_files[0],image_files[1],scale_ratio,True)
+        window.unbind("r")
+        window.unbind("<Return>")
+        
+        
+    window.bind("r",use_ransac)
+    
+    
     def run_algorithm(event):
-            create_panorama(old_points[0],new_points[0],image_files[0],image_files[1],scale_ratio)
+        create_panorama(old_points[0],new_points[0],image_files[0],image_files[1],scale_ratio,False)
+        window.unbind("r")
+        window.unbind("<Return>")
         
 
     
@@ -392,6 +402,7 @@ def gui():
     tk.mainloop()
 
 
+# Points translation
 def translate(points,width):
     new_points = []
     for i in points:
@@ -404,7 +415,8 @@ def translate(points,width):
         
 
 
-def create_panorama(old_points,new_points,image1,image2,scale_ratio):
+# Panorama 
+def create_panorama(old_points,new_points,image1,image2,scale_ratio,using_ransac):
         
 
     img1 = cv2.imread(image1)
@@ -419,47 +431,23 @@ def create_panorama(old_points,new_points,image1,image2,scale_ratio):
     new_points  = [[int(new_points[i][j] * scale_ratio) for j in range(2)]+[int(new_points[i][2])] for i in range(len(new_points)) ]
     old_points  = [[int(old_points[i][j] * scale_ratio) for j in range(2)]+[int(old_points[i][2])] for i in range(len(old_points)) ]
     
-    max_x = min(new_points,key = lambda x:x[0])
-    max_x = max_x[0]
     
+    new_points = translate(new_points,image1_width)
     
 
-    new_points = translate(new_points,image1_width)
-    print(old_points)
-    print(new_points)
-    M  = RANSAC(old_points,new_points)
+    if using_ransac[0]:
+        M  = RANSAC(old_points,new_points)
+    else:
+        M = dlt_algorithm(old_points[:4],new_points[:4])
     print(M)
 
-
-    print(image1_width + image2_width)
-    print(image1_height)
 
     result = cv2.warpPerspective(img1, M,(image1_width + image2_width, image1_height))
     print(result.shape)
     result[0:image2_height, image1_width:(image2_width+image1_width)] = img2
-   # img1 = cv2.warpPerspective(img1, M, (img1.shape[1], img2.shape[0]), flags=cv2.INTER_LINEAR)
     
     cv2.imwrite("result.jpg",result)
 
-
-    #print(new_points)
-    #print(old_points)
-
-    #new_image_2  = []
-    #for i in range(image2_height):
-        #l = copy.deepcopy(img1[i])
-        #l = np.concatenate((l,img2[i]))
-        ##print(len(l))
-        #new_image_2.append(l)
-
-    #new_image_2a = np.array(new_image_2)
-    #cv2.imwrite("tmp2.jpg",new_image_2a)
-
-
-
-    ##new_im = cv2.warpPerspective(new_image_2a, M, (image1_width, image1_height), flags=cv2.INTER_LINEAR)
-    
-    ##cv2.imwrite("result.jpg",new_im)
     
 
 # MAIN
