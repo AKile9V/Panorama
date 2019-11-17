@@ -143,9 +143,15 @@ def distnace(p1, p2):
 # ----------------------------------------------- RANSAC --------------------------------------------------
 
 def RANSAC(old_points, new_points):
+    print("RANSAC algorithm starting\n Please wait, it could take some time...")
     best_model = None
     max_inlier = 0
     max_iter = 10000
+    if len(old_points) > len(new_points):
+        old_points = old_points[:len(new_points)]
+    elif len(old_points) < len(new_points):
+        new_points = new_points[:len(old_points)]
+    
     for i in range(max_iter):
         s = random.sample(range(len(old_points)), 4)
         n = [new_points[i] for i in s]
@@ -165,10 +171,12 @@ def RANSAC(old_points, new_points):
             max_inlier = current_inliers
             best_model = copy.deepcopy(matrix)
 
-    print(max_inlier)
+    print("Selected model have", max_inlier, "inliers from ", len(old_points),"total matched point")
     return best_model
 
 
+
+# Printing usage
 def Usage():
     print("Usage: \nInput number of pictures you want to load.\nSelect them in order you want them to be merged (from left to right)")
     print("Use you left/right arrow to switch between pictures")
@@ -179,7 +187,7 @@ def Usage():
         
 
 
-
+# Selecting number of points
 def initializing():
     # Number of points for creating polygon TODO: dont care about user input
     num_of_pictures  = 0
@@ -188,13 +196,15 @@ def initializing():
     
     while True:
         try:
-            num_of_pictures = int(input("How many pictures you want to use?\n"))
-            #pyAssert(1 < num_of_pictures,"You must choose at least 2 pictures")
+            num_of_pictures = int(input("How many pictures you want to use? (Currently maximum is 2 images) \n"))
+           # if num_of_pictures > 2:
+           #     print("You selected more than maximum number!!!\n")
+          #      continue
             break
         except ValueError:
             print("Please enter the correct number")
             pass
-        
+    
     return num_of_pictures
 
 # ------------------------------------------------- GUI -------------------------------------------------
@@ -258,7 +268,6 @@ def gui():
                 im = im.resize((int(picture_width/scale_ratio),int(picture_height/scale_ratio)),Image.ANTIALIAS)
             
             new_image = ImageTk.PhotoImage(im)
-        
             loaded_pictures.append(new_image)
 
         except(SystemError, AttributeError):
@@ -269,12 +278,12 @@ def gui():
     
     
     current_pictures = [0,1]
-    canvas1 = tk.Canvas(window, width=canvas_width, height=loaded_pictures[current_pictures[0]].height(), bg='red',bd = 0,highlightbackground = "white")
+    canvas1 = tk.Canvas(window, width=canvas_width, height=loaded_pictures[current_pictures[0]].height(), bg='black',bd = 0,highlightbackground = "white")
     canvas1.create_image(0, 0, image=loaded_pictures[current_pictures[0]], anchor=tk.NW)
     canvas1.pack(side = tk.LEFT)
 
 
-    canvas2 = tk.Canvas(window, width=canvas_width, height=loaded_pictures[current_pictures[1]].height(), bg='red',bd = 0,highlightbackground = "white")
+    canvas2 = tk.Canvas(window, width=canvas_width, height=loaded_pictures[current_pictures[1]].height(), bg='black',bd = 0,highlightbackground = "white")
     canvas2.create_image(0, 0, image=loaded_pictures[current_pictures[1]], anchor=tk.NW)
     canvas2.pack(side = tk.LEFT)
     
@@ -299,6 +308,7 @@ def gui():
     old_points = [[] for i in range(num_of_pictures-1) ]
     new_points = [[] for i in range(num_of_pictures-1) ]
     rec_id = [[],[]]
+    no_point = [[],[]]
     
     def click_original(eventorigin):
         # Take (x,y) coords
@@ -306,7 +316,8 @@ def gui():
         y0 = int(eventorigin.y)
         
         old_points[current_pictures[0]].append([x0, y0, 1.0])
-        rec_id[0].append(canvas1.create_rectangle(x0 - 5, y0 - 5, x0 + 5, y0 + 5, outline="red", width=3))
+        rec_id[0].append(canvas1.create_rectangle(x0 - 3, y0 - 3, x0 + 3, y0 + 3, outline="red", width=2))
+        no_point[0].append(canvas1.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[0]))))        
 
     def click_images(eventorigin):
         # Take (x,y) coords
@@ -314,10 +325,8 @@ def gui():
         y0 = int(eventorigin.y)
         
         new_points[current_pictures[0]].append([x0, y0, 1.0])
-        rec_id[1].append(canvas2.create_rectangle(x0 - 5, y0 - 5, x0 + 5, y0 + 5, outline="blue", width=3))
-        
-
-    
+        rec_id[1].append(canvas2.create_rectangle(x0 - 3, y0 - 3, x0 + 3, y0 + 3, outline="blue", width=2))
+        no_point[1].append(canvas2.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[1]))))
 
 
     canvas1.bind("<Button 1>",click_original)
@@ -331,6 +340,19 @@ def gui():
             canvas1.delete(i)
         for i in rec_id[1]:
             canvas2.delete(i)
+        for i in no_point[0]:
+            canvas1.delete(i)
+        for i in no_point[1]:
+            canvas2.delete(i)
+        
+        rec_id.clear()
+        rec_id.append([])
+        rec_id.append([])
+        no_point.clear()
+        no_point.append([])
+        no_point.append([])
+
+            
         
         current_pictures[0]  = current_pictures[1]
         current_pictures[1] += 1
@@ -340,12 +362,14 @@ def gui():
             l = old_points[current_pictures[0]]
             for x0,y0,z in l:
                 rec_id[0].append(canvas1.create_rectangle(x0 - 5, y0 - 5, x0 + 5, y0 + 5, outline="red", width=3))
+                no_point[0].append(canvas1.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[0]))))
 
         if len(new_points[current_pictures[0]])>0:
                                                     
             l = new_points[current_pictures[0]]
             for x0,y0,z in l:
                 rec_id[1].append(canvas2.create_rectangle(x0 - 5, y0 - 5, x0 + 5, y0 + 5, outline="blue", width=3))
+                no_point[1].append(canvas2.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[1]))))
 
         tk.mainloop()
 
@@ -357,6 +381,17 @@ def gui():
             canvas1.delete(i)
         for i in rec_id[1]:
             canvas2.delete(i)
+        for i in no_point[0]:
+            canvas1.delete(i)
+        for i in no_point[1]:
+            canvas2.delete(i)
+        rec_id.clear()
+        rec_id.append([])
+        rec_id.append([])
+        no_point.clear()
+        no_point.append([])
+        no_point.append([])
+
         current_pictures[1]  = current_pictures[0]
         current_pictures[0] -= 1
         canvas1.itemconfig(1, image=loaded_pictures[current_pictures[0]])
@@ -366,12 +401,14 @@ def gui():
             l = old_points[current_pictures[0]]
             for x0,y0,z in l:
                 rec_id[0].append(canvas1.create_rectangle(x0 - 5, y0 - 5, x0 + 5, y0 + 5, outline="red", width=3))
+                no_point[0].append(canvas1.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[0]))))
 
         if len(new_points[current_pictures[0]])>0:
                                                     
             l = new_points[current_pictures[0]]
             for x0,y0,z in l:
                 rec_id[1].append(canvas2.create_rectangle(x0 - 5, y0 - 5, x0 + 5, y0 + 5, outline="blue", width=3))
+                no_point[1].append(canvas2.create_text(x0 + 5,y0 -5,fill="black",font="Times 15 bold",text = "{}".format(len(rec_id[1]))))
         tk.mainloop()
 
 
@@ -383,7 +420,28 @@ def gui():
         create_panorama(old_points[0],new_points[0],image_files[0],image_files[1],scale_ratio,True)
         window.unbind("r")
         window.unbind("<Return>")
+        canvas1.destroy()
+        canvas2.destroy()
+        im = Image.open("result.jpg")
         
+        #Scaling
+        picture_width,picture_height = im.size 
+        scalee_ratio = 1
+        if picture_width > canvas_width or picture_height > canvas_height:
+            if picture_width > picture_height:
+                scalee_ratio = picture_width / width_wc
+            else:
+                scalee_ratio = picture_height/ height_wc
+            
+
+            im = im.resize((int(picture_width/scalee_ratio),int(picture_height/scalee_ratio)),Image.ANTIALIAS)
+        
+        #Showing
+        new_image = ImageTk.PhotoImage(im)
+        canvas_show = tk.Canvas(window, width=width_wc, height=height_wc, bg='black',bd = 0,highlightbackground = "white")
+        canvas_show.create_image(0, 0, image=new_image, anchor=tk.NW)
+        canvas_show.pack(side = tk.LEFT)
+        tk.mainloop()
         
     window.bind("r",use_ransac)
     
@@ -392,7 +450,29 @@ def gui():
         create_panorama(old_points[0],new_points[0],image_files[0],image_files[1],scale_ratio,False)
         window.unbind("r")
         window.unbind("<Return>")
+        canvas1.destroy()
+        canvas2.destroy()
+        im = Image.open("result.jpg")
         
+        #Scaling
+        picture_width,picture_height = im.size 
+        scalee_ratio = 1
+        if picture_width > canvas_width or picture_height > canvas_height:
+            if picture_width > picture_height:
+                scalee_ratio = picture_width / width_wc
+            else:
+                scalee_ratio = picture_height/ height_wc
+            
+
+            im = im.resize((int(picture_width/scalee_ratio),int(picture_height/scalee_ratio)),Image.ANTIALIAS)
+        
+        #Showing
+        new_image = ImageTk.PhotoImage(im)
+        canvas_show = tk.Canvas(window, width=width_wc, height=height_wc, bg='black',bd = 0,highlightbackground = "white")
+        canvas_show.create_image(0, 0, image=new_image, anchor=tk.NW)
+        canvas_show.pack(side = tk.LEFT)
+        tk.mainloop()
+
 
     
     window.bind("<Return>",run_algorithm)
@@ -443,7 +523,6 @@ def create_panorama(old_points,new_points,image1,image2,scale_ratio,using_ransac
 
 
     result = cv2.warpPerspective(img1, M,(image1_width + image2_width, image1_height))
-    print(result.shape)
     result[0:image2_height, image1_width:(image2_width+image1_width)] = img2
     
     cv2.imwrite("result.jpg",result)
